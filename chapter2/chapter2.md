@@ -306,7 +306,7 @@ fn main() {
 
 试着多运行几遍这个程序
 
-```rust
+```shell
 $ cargo run
    Compiling guessing_game v0.1.0 (file:///projects/guessing_game)
     Finished dev [unoptimized + debuginfo] target(s) in 2.53 secs
@@ -360,7 +360,7 @@ fn main() {
 
 然后，这些代码还是不能被编译，让我们试着编译一下：
 
-```Rust
+```shell
 $ cargo build
    Compiling guessing_game v0.1.0 (file:///projects/guessing_game)
 error[E0308]: mismatched types
@@ -420,7 +420,7 @@ let guess: u32 = guess.trim().parse()
 
 让我们运行这个程序！
 
-```Rust
+```shell
 $ cargo run
    Compiling guessing_game v0.1.0 (file:///projects/guessing_game)
     Finished dev [unoptimized + debuginfo] target(s) in 0.43 secs
