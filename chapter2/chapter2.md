@@ -434,4 +434,180 @@ Too big!
 
 ```
 
-非常好！
+非常好！即使我们在 guess 前面添加了空格，这个程序仍然能识别出用户猜的数字是 76.多次运行这个程序确保能够得到不同的输入。
+
+我们已经完成了这个游戏的大部分了，但是用户只能进行一次输入，现在我们通过循环来做出一些改变
+
+## 使用循环允许多次的猜测
+
+`loop` 关键字创建了一个无限制的循环，现在我们给予了用户更多的机会来猜测这个数字：
+
+```rust
+// --snip--
+
+    println!("The secret number is: {}", secret_number);
+
+    loop {
+        println!("Please input your guess.");
+
+        // --snip--
+
+        match guess.cmp(&secret_number) {
+            Ordering::Less => println!("Too small!"),
+            Ordering::Greater => println!("Too big!"),
+            Ordering::Equal => println!("You win!"),
+        }
+    }
+}
+
+```
+
+正如你看到的，我们将之前的代码移动到了 loop 循环中。但是注意到现在有一个新的问题，这个循环会一直进行，它似乎没办法停止下来。
+
+玩家可以通过使用快捷键 ctrl-c 来中断程序，这里也有另一种方法来停止这个程序，正如之前讨论`parse` 时提到的： 如果一个玩家输入了一个非数字的字符，程序就会崩溃。我们可以利用这个特点来使程序中止。如下：
+
+```shell
+$ cargo run
+   Compiling guessing_game v0.1.0 (file:///projects/guessing_game)
+    Finished dev [unoptimized + debuginfo] target(s) in 1.50 secs
+     Running `target/debug/guessing_game`
+Guess the number!
+The secret number is: 59
+Please input your guess.
+45
+You guessed: 45
+Too small!
+Please input your guess.
+60
+You guessed: 60
+Too big!
+Please input your guess.
+59
+You guessed: 59
+You win!
+Please input your guess.
+quit
+thread 'main' panicked at 'Please type a number!: ParseIntError { kind: InvalidDigit }', src/libcore/result.rs:785
+note: Run with `RUST_BACKTRACE=1` for a backtrace.
+error: Process didn't exit successfully: `target/debug/guess` (exit code: 101)
+```
+
+键入`quit` 就会退出游戏，其实输入任何其他的非数字的字符都能够推出。然而，这仅仅只是一种退而求其次的方法。我们想要的是当玩家输入了正确的数字后程序能够自动退出。
+
+## 正确的退出
+
+当用户赢得游戏后，我们可以使用`break`关键字来退出游戏。
+
+```Rust
+// --snip--
+
+        match guess.cmp(&secret_number) {
+            Ordering::Less => println!("Too small!"),
+            Ordering::Greater => println!("Too big!"),
+            Ordering::Equal => {
+                println!("You win!");
+                break;
+            }
+        }
+    }
+}
+
+```
+
+在 `You win` 之后添加 `break` 就会使程序得到正确的输入后中断循环。退出循环意味着结束程序，因为这个循环就是 `main` 函数的最后一部分了。
+
+## 处理非法输入
+
+当玩家输入了一个非数字的字符串不使程序崩溃，让我们来忽略非数字的字符串而让用户重新输入。我们可以通过二选一的策略来做这件事。
+
+```Rust
+// --snip--
+
+io::stdin().read_line(&mut guess)
+    .expect("Failed to read line");
+
+let guess: u32 = match guess.trim().parse() {
+    Ok(num) => num,
+    Err(_) => continue,
+};
+
+println!("You guessed: {}", guess);
+
+// --snip--
+
+```
+
+如果 `parse` 能够成功的将字符串转换为数字类型，它会返回一个包含结果的 `Ok` 类型的值。它会匹配到第一个分支，并且这个分支的表达式会返回一个数值类型的值。
+
+如果 `parse` 不能够将字符串转换为数值类型，就会返回 `Err` 类型的值。它会匹配到 `Err` 的条件分支， `_` 下划线是一个 catchall 的值，它表示所有的错误类型。所以程序会执行`continue`语句，它使程序马上进行到下一次的循环中。
+
+现在程序中的一切都应该预期的进行了，让我们运行一下：
+
+```shell
+$ cargo run
+   Compiling guessing_game v0.1.0 (file:///projects/guessing_game)
+     Running `target/debug/guessing_game`
+Guess the number!
+The secret number is: 61
+Please input your guess.
+10
+You guessed: 10
+Too small!
+Please input your guess.
+99
+You guessed: 99
+Too big!
+Please input your guess.
+foo
+Please input your guess.
+61
+You guessed: 61
+You win!
+
+```
+
+妙极了！随着最后一次小小的调整，我们完成了这个游戏。回顾这个程序，它打印了一个神秘数字。在测试的时候它很有用，但是这使一个游戏，我们还需要把它删除掉。
+
+```Rust
+use std::io;
+use std::cmp::Ordering;
+use rand::Rng;
+
+fn main() {
+    println!("Guess the number!");
+
+    let secret_number = rand::thread_rng().gen_range(1, 101);
+
+    loop {
+        println!("Please input your guess.");
+
+        let mut guess = String::new();
+
+        io::stdin().read_line(&mut guess)
+            .expect("Failed to read line");
+
+        let guess: u32 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        println!("You guessed: {}", guess);
+
+        match guess.cmp(&secret_number) {
+            Ordering::Less => println!("Too small!"),
+            Ordering::Greater => println!("Too big!"),
+            Ordering::Equal => {
+                println!("You win!");
+                break;
+            }
+        }
+    }
+}
+
+```
+
+## 总结
+
+此时，你已经成功的完成了这个游戏。恭喜！
+
+这个项目通过手把手的教学给你介绍了 Rust 中的一些概念 `let`, `match`, 方法， 关联函数， 使用第三方包等等。在接下来的章节中，你会学习到更多的概念，第三章包含了许多程序语言都有的通用的概念，类似变量，数据类型和函数等。第四章你将会探索 ownership，这是一个 Rust 中特有的特点。第五章将会讨论结构和方法，第六章会解释枚举类型。
